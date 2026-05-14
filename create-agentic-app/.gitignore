@@ -7,3 +7,4 @@ node_modules
 setup-template.sh
 setup-template.ps1
 template/
+dist/

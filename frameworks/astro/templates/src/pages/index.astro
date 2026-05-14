@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { SetupChecklist } from '../components/SetupChecklist';
 ---
 
 <BaseLayout title="Agentic App - AI-Powered Starter Kit">
@@ -26,6 +27,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           View on GitHub
         </a>
       </div>
+    </div>
+
+    <div class="max-w-xl mx-auto mt-12">
+      <SetupChecklist client:load />
     </div>
 
     <div class="mt-20 grid md:grid-cols-3 gap-8">
@@ -63,6 +68,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <p class="text-gray-600 dark:text-gray-300">
           Vercel AI SDK with OpenRouter for streaming chat responses.
         </p>
+      </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto mt-16">
+      <h2 class="text-2xl font-bold text-center mb-8">Next Steps</h2>
+      <div class="grid md:grid-cols-2 gap-6 text-left">
+        <div class="p-6 border rounded-lg bg-white dark:bg-gray-800">
+          <h3 class="font-semibold mb-3">1. Set up environment variables</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            Copy <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">env.example</code> to <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">.env</code> and configure:
+          </p>
+          <ul class="text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside">
+            <li>POSTGRES_URL (PostgreSQL connection string)</li>
+            <li>GOOGLE_CLIENT_ID (OAuth credentials)</li>
+            <li>GOOGLE_CLIENT_SECRET (OAuth credentials)</li>
+            <li>OPENROUTER_API_KEY (for AI functionality)</li>
+          </ul>
+        </div>
+        <div class="p-6 border rounded-lg bg-white dark:bg-gray-800">
+          <h3 class="font-semibold mb-3">2. Set up your database</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Run database migrations:</p>
+          <div class="space-y-2">
+            <code class="text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded block font-mono">npm run db:generate</code>
+            <code class="text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded block font-mono">npm run db:migrate</code>
+          </div>
+        </div>
       </div>
     </div>
   </div>

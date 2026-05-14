@@ -1,8 +1,4 @@
-"use client";
-
 import { useEffect, useState } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 type DiagnosticsResponse = {
   timestamp: string;
@@ -12,7 +8,6 @@ type DiagnosticsResponse = {
     GOOGLE_CLIENT_ID: boolean;
     GOOGLE_CLIENT_SECRET: boolean;
     OPENROUTER_API_KEY: boolean;
-    NEXT_PUBLIC_APP_URL: boolean;
   };
   database: {
     connected: boolean;
@@ -21,7 +16,6 @@ type DiagnosticsResponse = {
   };
   auth: {
     configured: boolean;
-    routeResponding: boolean | null;
   };
   ai: {
     configured: boolean;
@@ -35,13 +29,13 @@ type DiagnosticsResponse = {
 
 function StatusIcon({ ok }: { ok: boolean }) {
   return ok ? (
-    <div title="ok">
-      <CheckCircle2 className="h-4 w-4 text-green-600" aria-label="ok" />
-    </div>
+    <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
   ) : (
-    <div title="not ok">
-      <XCircle className="h-4 w-4 text-red-600" aria-label="not-ok" />
-    </div>
+    <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
   );
 }
 
@@ -65,52 +59,36 @@ export function SetupChecklist() {
     }
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const steps = [
     {
       key: "env",
       label: "Environment variables",
-      ok:
-        !!data?.env.POSTGRES_URL &&
-        !!data?.env.BETTER_AUTH_SECRET &&
-        !!data?.env.GOOGLE_CLIENT_ID &&
-        !!data?.env.GOOGLE_CLIENT_SECRET,
-      detail:
-        "Requires POSTGRES_URL, BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET",
+      ok: !!data?.env.POSTGRES_URL && !!data?.env.BETTER_AUTH_SECRET && !!data?.env.GOOGLE_CLIENT_ID && !!data?.env.GOOGLE_CLIENT_SECRET,
+      detail: "Requires POSTGRES_URL, BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET",
     },
     {
       key: "db",
       label: "Database connected & schema",
       ok: !!data?.database.connected && !!data?.database.schemaApplied,
-      detail: data?.database.error
-        ? `Error: ${data.database.error}`
-        : undefined,
+      detail: data?.database.error ? `Error: ${data.database.error}` : undefined,
     },
     {
       key: "auth",
       label: "Auth configured",
       ok: !!data?.auth.configured,
-      detail:
-        data?.auth.routeResponding === false
-          ? "Auth route not responding"
-          : undefined,
     },
     {
       key: "ai",
       label: "AI integration (optional)",
       ok: !!data?.ai.configured,
-      detail: !data?.ai.configured
-        ? "Set OPENROUTER_API_KEY for AI chat"
-        : undefined,
+      detail: !data?.ai.configured ? "Set OPENROUTER_API_KEY for AI chat" : undefined,
     },
     {
       key: "storage",
       label: "File storage (optional)",
-      ok: true, // Always considered "ok" since local storage works
+      ok: true,
       detail: data?.storage
         ? data.storage.type === "remote"
           ? "Using Vercel Blob storage"
@@ -126,27 +104,31 @@ export function SetupChecklist() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="font-semibold">Setup checklist</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {completed}/{steps.length} completed
           </p>
         </div>
-        <Button size="sm" onClick={load} disabled={loading}>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="px-3 py-1.5 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+        >
           {loading ? "Checking..." : "Re-check"}
-        </Button>
+        </button>
       </div>
 
-      {error ? <div className="text-sm text-destructive">{error}</div> : null}
+      {error ? <div className="text-sm text-red-600 mb-3">{error}</div> : null}
 
       <ul className="space-y-2">
         {steps.map((s) => (
           <li key={s.key} className="flex items-start gap-2">
-            <div className="mt-0.5">
+            <div className="mt-0.5 shrink-0">
               <StatusIcon ok={Boolean(s.ok)} />
             </div>
             <div>
-              <div className="font-medium">{s.label}</div>
+              <div className="font-medium text-sm">{s.label}</div>
               {s.detail ? (
-                <div className="text-sm text-muted-foreground">{s.detail}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{s.detail}</div>
               ) : null}
             </div>
           </li>
@@ -154,7 +136,7 @@ export function SetupChecklist() {
       </ul>
 
       {data ? (
-        <div className="mt-4 text-xs text-muted-foreground">
+        <div className="mt-4 text-xs text-gray-400 dark:text-gray-500">
           Last checked: {new Date(data.timestamp).toLocaleString()}
         </div>
       ) : null}
