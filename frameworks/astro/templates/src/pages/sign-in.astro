@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SignInButton from '../components/auth/SignInButton';
+---
+
+<BaseLayout title="Sign In - Agentic App">
+  <div class="container mx-auto px-4 py-16">
+    <div class="max-w-md mx-auto">
+      <h1 class="text-3xl font-bold text-center mb-8">Sign In</h1>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+        <div class="text-center mb-6">
+          <p class="text-gray-600 dark:text-gray-400 mb-4">
+            Sign in to access your dashboard and AI chat
+          </p>
+        </div>
+        <SignInButton client:load />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
