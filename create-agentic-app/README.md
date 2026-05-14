@@ -7,13 +7,13 @@ Scaffold a new agentic AI application with Next.js, Better Auth, and AI SDK.
 Create a new project in the current directory:
 
 ```bash
-npx create-agentic-app@latest .
+npx @skabir2023/create-agentic-app@latest .
 ```
 
 Create a new project in a subdirectory:
 
 ```bash
-npx create-agentic-app@latest my-app
+npx @skabir2023/create-agentic-app@latest my-app
 ```
 
 ### Non-Interactive Mode (for CI/CD and coding agents)
@@ -22,10 +22,10 @@ All prompts can be bypassed with CLI flags, enabling fully automated project sca
 
 ```bash
 # Full non-interactive setup
-npx create-agentic-app@latest my-app -y -p pnpm
+npx @skabir2023/create-agentic-app@latest my-app -y -p pnpm
 
 # Skip install and git init for faster scaffolding
-npx create-agentic-app@latest my-app -y -p npm --skip-install --skip-git
+npx @skabir2023/create-agentic-app@latest my-app -y -p npm --skip-install --skip-git
 ```
 
 #### Available Flags
@@ -158,9 +158,9 @@ In a different directory, test that it works:
 
 ```bash
 cd /path/to/test-directory
-npx create-agentic-app@latest test-project
+npx @skabir2023/create-agentic-app@latest test-project
 # or use the specific version
-npx create-agentic-app@1.1.4 test-project
+npx @skabir2023/create-agentic-app@1.1.4 test-project
 ```
 
 ### Quick Reference Commands
@@ -216,16 +216,16 @@ The sync script excludes these patterns (see `scripts/sync-templates.js`):
 
 **Issue: npmjs.com shows old version after publishing**
 - The npm website can take 5-10 minutes to update due to CDN caching
-- Verify actual registry: `npm view create-agentic-app version`
+- Verify actual registry: `npm view @skabir2023/create-agentic-app version`
 - The package is available to users immediately via `npx` even if the website hasn't updated
 
 **Issue: Users getting old version with `npx`**
 - Users may have cached versions. Tell them to:
   ```bash
   npx clear-npx-cache
-  npx create-agentic-app@latest my-project
+  npx @skabir2023/create-agentic-app@latest my-project
   # or use specific version
-  npx create-agentic-app@1.1.4 my-project
+  npx @skabir2023/create-agentic-app@1.1.4 my-project
   ```
 
 **Issue: Forgot to run sync before publishing**
