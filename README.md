@@ -1,20 +1,85 @@
 # Agentic Coding Starter Kit
 
-A production-oriented starter kit for building AI-powered web apps with an agentic development workflow. It gives you a working Next.js app, authentication, PostgreSQL, Drizzle ORM, AI SDK integration, shadcn/ui components, and project instructions that help coding agents plan, split, implement, review, and verify changes.
+A production-oriented starter kit for building AI-powered web apps with an agentic development workflow. It supports **multiple frameworks** (Next.js and Astro) with authentication, PostgreSQL, Drizzle ORM, AI SDK integration, and project instructions that help coding agents plan, split, implement, review, and verify changes.
 
-The goal is simple: install the starter, describe the product you want to build, and let your coding agent help turn the boilerplate into your actual POC, MVP, or internal tool.
+The goal is simple: install the starter, choose your framework, describe the product you want to build, and let your coding agent help turn the boilerplate into your actual POC, MVP, or internal tool.
+
+## Multi-Framework Support
+
+This starter kit now supports multiple frameworks:
+
+- **Next.js** - Full-stack, App Router, Vercel-optimised
+- **Astro** - Content-first, islands architecture, SSR/SSG
+
+Choose the framework that best fits your project needs. Both include the same core features (auth, database, AI integration).
 
 ## What You Get
 
-- **Next.js 16 and React 19** with the App Router
+Both frameworks include:
+
 - **TypeScript** and a strict project setup
 - **Better Auth** with email/password enabled by default
 - **PostgreSQL and Drizzle ORM** for schema and migrations
 - **AI SDK and OpenRouter** for chat and AI features
-- **shadcn/ui, Tailwind CSS, and Lucide icons** for the UI foundation
+- **Tailwind CSS** for styling
 - **Local or Vercel Blob file storage** through one storage abstraction
 - **Agent instructions** through `AGENTS.md` and `CLAUDE.md`
 - **Agent skills** for specs, implementation, reviews, security scans, UI work, and shipping
+
+### Next.js-Specific
+- **Next.js 16 and React 19** with the App Router
+- **shadcn/ui and Lucide icons** for the UI foundation
+
+### Astro-Specific
+- **Astro 4** with React islands for interactivity
+- **Server-side rendering** with Node adapter
+
+## Frameworks
+
+### Next.js
+- **Location**: `frameworks/nextjs/`
+- **Best for**: Full-stack web applications, Vercel deployment
+- **Documentation**: `frameworks/nextjs/prompts/nextjs-conventions.md`
+
+### Astro
+- **Location**: `frameworks/astro/`
+- **Best for**: Content-focused sites, hybrid rendering, performance
+- **Documentation**: `frameworks/astro/prompts/astro-conventions.md`
+
+## Core Layer
+
+The `core/` directory contains shared AI-agent infrastructure used by both frameworks:
+
+- `core/agents/` - Reusable agent definitions
+- `core/mcp/` - MCP server configuration
+- `core/prompts/` - Shared prompt templates
+- `core/memory/` - Memory patterns for agents
+- `core/workflows/` - Claude Code slash-command workflows
+- `core/coding-rules/` - Shared linting/style rules
+- `core/shared-tools/` - Utility scripts
+
+This layer is automatically included in scaffolded projects as `.core/`.
+
+## Project Structure
+
+```
+agentic-coding-starter-kit/
+├── core/                          # Shared AI-agent infrastructure
+├── frameworks/
+│   ├── nextjs/                    # Next.js boilerplate
+│   │   ├── templates/            # Template files
+│   │   ├── integrations/         # Integration docs
+│   │   ├── deploy/              # Deployment configs
+│   │   └── prompts/             # Next.js-specific prompts
+│   └── astro/                    # Astro boilerplate
+│       ├── templates/            # Template files
+│       ├── integrations/        # Integration docs
+│       ├── deploy/             # Deployment configs
+│       └── prompts/            # Astro-specific prompts
+├── create-agentic-app/          # CLI tool
+├── docs/                        # Documentation
+└── README.md
+```
 
 ## Quick Start
 
@@ -25,22 +90,16 @@ npx create-agentic-app@latest my-app
 cd my-app
 ```
 
-Or create the app in the current directory:
+The CLI will prompt you to select a framework (Next.js or Astro) and package manager. Then configure and run the app:
 
 ```bash
-npx create-agentic-app@latest .
-```
-
-Then configure and run the app:
-
-```bash
-cp env.example .env
 docker compose up -d
 pnpm db:migrate
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+- **Next.js**: Open [http://localhost:3000](http://localhost:3000)
+- **Astro**: Open [http://localhost:4321](http://localhost:4321)
 
 The CLI copies the starter files, installs dependencies with your selected package manager, and prepares the environment file. If you use `npm`, replace the `pnpm` commands above with `npm run`.
 

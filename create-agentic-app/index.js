@@ -1,140 +1,202 @@
 #!/usr/bin/env node
 
-import { program } from 'commander';
-import chalk from 'chalk';
-import prompts from 'prompts';
-import ora from 'ora';
-import fs from 'fs-extra';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { intro, outro, select, text, spinner, confirm } from "@clack/prompts";
+import chalk from "chalk";
+import fs from "fs-extra";
+import path from "path";
+import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TEMPLATE_DIR = path.join(__dirname, 'template');
+const REPO_ROOT = path.resolve(__dirname, "..");
 
-async function main() {
-  console.log(chalk.bold.cyan('\n🤖 Create Agentic App\n'));
-
-  program
-    .name('create-agentic-app')
-    .description('Scaffold a new agentic AI application')
-    .argument('[project-directory]', 'Project directory name (use "." for current directory)')
-    .option('-y, --yes', 'Auto-confirm non-empty directory prompt')
-    .option('-p, --package-manager <manager>', 'Package manager to use: pnpm | npm | yarn')
-    .option('--skip-install', 'Skip dependency installation')
-    .option('--skip-git', 'Skip git repository initialization')
-    .parse(process.argv);
-
-  const args = program.args;
-  const opts = program.opts();
-  let projectDir = args[0] || '.';
-
-  // Validate --package-manager value if provided
-  const validPackageManagers = ['pnpm', 'npm', 'yarn'];
-  if (opts.packageManager && !validPackageManagers.includes(opts.packageManager)) {
-    console.log(chalk.red(`Invalid package manager: "${opts.packageManager}"`));
-    console.log(chalk.yellow(`Valid options: ${validPackageManagers.join(', ')}`));
-    process.exit(1);
+function copyDir(src, dest, options = {}) {
+  if (!fs.existsSync(src)) {
+    console.warn(`Source directory does not exist: ${src}`);
+    return;
   }
+  fs.ensureDirSync(dest);
+  const entries = fs.readdirSync(src, { withFileTypes: true });
 
-  // Resolve the target directory
-  const targetDir = path.resolve(process.cwd(), projectDir);
-  const projectName = projectDir === '.' ? path.basename(targetDir) : projectDir;
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
 
-  // Check if directory exists and is not empty
-  if (fs.existsSync(targetDir)) {
-    const files = fs.readdirSync(targetDir);
-    if (files.length > 0 && projectDir !== '.') {
-      if (opts.yes) {
-        console.log(chalk.yellow(`Directory "${projectDir}" is not empty. Proceeding (--yes).`));
-      } else {
-        const { proceed } = await prompts({
-          type: 'confirm',
-          name: 'proceed',
-          message: `Directory "${projectDir}" is not empty. Continue anyway?`,
-          initial: false
-        });
-
-        if (!proceed) {
-          console.log(chalk.yellow('Cancelled.'));
-          process.exit(0);
-        }
-      }
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath, options);
+    } else {
+      if (options.filter && !options.filter(srcPath)) continue;
+      fs.copyFileSync(srcPath, destPath);
     }
   }
+}
 
-  // Determine package manager
+function mergeDir(src, dest) {
+  if (!fs.existsSync(src)) {
+    console.warn(`Source directory does not exist: ${src}`);
+    return;
+  }
+  fs.ensureDirSync(dest);
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      mergeDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function listFiles(dir, prefix = "") {
+  const files = [];
+  if (!fs.existsSync(dir)) return files;
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listFiles(fullPath, prefix + entry.name + "/"));
+    } else {
+      files.push(prefix + entry.name);
+    }
+  }
+  return files;
+}
+
+async function main() {
+  console.log(chalk.bold.cyan("\n🤖 create-agentic-app\n"));
+
+  const projectDir = process.argv[2] || ".";
+  const dryRun = process.argv.includes("--dry-run");
+
+  const targetDir = path.resolve(process.cwd(), projectDir);
+  const projectName = projectDir === "." ? path.basename(targetDir) : projectDir;
+
+  if (dryRun) {
+    console.log(chalk.yellow("🔍 Dry run mode - no files will be created\n"));
+  }
+
+  const framework = await select({
+    message: "Select a framework:",
+    options: [
+      {
+        value: "nextjs",
+        label: "Next.js",
+        hint: "Full-stack, App Router, Vercel-optimised",
+      },
+      {
+        value: "astro",
+        label: "Astro",
+        hint: "Content-first, islands architecture, SSR/SSG",
+      },
+    ],
+  });
+
+  if (!framework) {
+    console.log(chalk.yellow("Cancelled."));
+    process.exit(0);
+  }
+
   let packageManager;
-  if (opts.packageManager) {
-    packageManager = opts.packageManager;
+  if (dryRun) {
+    packageManager = "pnpm";
+    console.log(chalk.gray(`  Using default package manager: pnpm (dry run)\n`));
   } else {
-    const response = await prompts({
-      type: 'select',
-      name: 'packageManager',
-      message: 'Which package manager do you want to use?',
-      choices: [
-        { title: 'pnpm (recommended)', value: 'pnpm' },
-        { title: 'npm', value: 'npm' },
-        { title: 'yarn', value: 'yarn' }
+    packageManager = await select({
+      message: "Which package manager?",
+      options: [
+        { value: "pnpm", label: "pnpm (recommended)" },
+        { value: "npm", label: "npm" },
+        { value: "yarn", label: "yarn" },
       ],
-      initial: 0
     });
-    packageManager = response.packageManager;
 
     if (!packageManager) {
-      console.log(chalk.yellow('Cancelled.'));
+      console.log(chalk.yellow("Cancelled."));
       process.exit(0);
     }
   }
 
-  console.log();
-  const spinner = ora('Creating project...').start();
+  const frameworkSrc = path.join(REPO_ROOT, "frameworks", framework, "templates");
+  const coreSrc = path.join(REPO_ROOT, "core");
+
+  if (dryRun) {
+    console.log(chalk.bold(`\n📁 Files that would be created for ${framework === "nextjs" ? "Next.js" : "Astro"}:\n`));
+
+    const templateFiles = listFiles(frameworkSrc);
+    console.log(chalk.cyan("  Template files:"));
+    templateFiles.slice(0, 20).forEach(f => console.log(chalk.gray(`    - ${f}`)));
+    if (templateFiles.length > 20) {
+      console.log(chalk.gray(`    ... and ${templateFiles.length - 20} more files`));
+    }
+
+    const coreFiles = listFiles(coreSrc);
+    console.log(chalk.cyan("\n  Core layer files:"));
+    coreFiles.slice(0, 10).forEach(f => console.log(chalk.gray(`    - .core/${f}`)));
+    if (coreFiles.length > 10) {
+      console.log(chalk.gray(`    ... and ${coreFiles.length - 10} more files`));
+    }
+
+    console.log(chalk.green("\n✅ Dry run complete - no files created.\n"));
+    process.exit(0);
+  }
+
+  const s = spinner();
+  s.start("Scaffolding your project...");
 
   try {
-    // Create target directory if it doesn't exist
-    fs.ensureDirSync(targetDir);
+    fs.mkdirSync(targetDir, { recursive: true });
 
-    // Copy template files
-    spinner.text = 'Copying template files...';
-    await fs.copy(TEMPLATE_DIR, targetDir, {
-      overwrite: false,
-      errorOnExist: false,
+    s.text = "Copying framework template...";
+    copyDir(frameworkSrc, targetDir, {
       filter: (src) => {
-        // Skip node_modules, .next, and other build artifacts
-        const relativePath = path.relative(TEMPLATE_DIR, src);
-        return !relativePath.includes('node_modules') &&
-               !relativePath.includes('.next') &&
-               !relativePath.includes('.git') &&
-               !relativePath.includes('pnpm-lock.yaml') &&
-               !relativePath.includes('package-lock.json') &&
-               !relativePath.includes('yarn.lock') &&
-               !relativePath.includes('tsconfig.tsbuildinfo');
+        const relativePath = path.relative(frameworkSrc, src);
+        return !relativePath.includes("node_modules") &&
+               !relativePath.includes(".next") &&
+               !relativePath.includes(".git") &&
+               !relativePath.includes("pnpm-lock.yaml") &&
+               !relativePath.includes("package-lock.json") &&
+               !relativePath.includes("yarn.lock");
       }
     });
 
-    // Copy .env.example to .env if it doesn't exist
-    const envExamplePath = path.join(targetDir, 'env.example');
-    const envPath = path.join(targetDir, '.env');
+    s.text = "Copying core layer...";
+    const coreDest = path.join(targetDir, ".core");
+    copyDir(coreSrc, coreDest);
 
-    if (fs.existsSync(envExamplePath) && !fs.existsSync(envPath)) {
-      spinner.text = 'Setting up environment file...';
-      await fs.copy(envExamplePath, envPath);
+    s.text = "Setting up Claude commands...";
+    const claudeCommandsDest = path.join(targetDir, ".claude", "commands");
+    mergeDir(path.join(coreSrc, "workflows"), claudeCommandsDest);
+
+    s.text = "Setting up Cursor rules...";
+    const cursorRulesDest = path.join(targetDir, ".cursor", "rules");
+    mergeDir(path.join(coreSrc, "coding-rules"), cursorRulesDest);
+
+    s.text = "Setting up MCP config...";
+    fs.copyFileSync(
+      path.join(coreSrc, "mcp", "mcp.json"),
+      path.join(targetDir, ".mcp.json")
+    );
+
+    const envExample = path.join(targetDir, "env.example");
+    if (fs.existsSync(envExample)) {
+      fs.renameSync(envExample, path.join(targetDir, ".env"));
     }
 
-    // Rename _gitignore to .gitignore (npm excludes .gitignore by default)
-    const gitignoreTemplatePath = path.join(targetDir, '_gitignore');
-    const gitignorePath = path.join(targetDir, '.gitignore');
-
+    const gitignoreTemplatePath = path.join(targetDir, "_gitignore");
+    const gitignorePath = path.join(targetDir, ".gitignore");
     if (fs.existsSync(gitignoreTemplatePath)) {
-      spinner.text = 'Setting up .gitignore file...';
-      await fs.move(gitignoreTemplatePath, gitignorePath, { overwrite: true });
+      fs.renameSync(gitignoreTemplatePath, gitignorePath);
     }
 
-    // Update package.json name if not current directory
-    if (projectDir !== '.') {
-      const packageJsonPath = path.join(targetDir, 'package.json');
+    if (projectDir !== ".") {
+      const packageJsonPath = path.join(targetDir, "package.json");
       if (fs.existsSync(packageJsonPath)) {
         const packageJson = await fs.readJson(packageJsonPath);
         packageJson.name = projectName;
@@ -142,75 +204,47 @@ async function main() {
       }
     }
 
-    spinner.succeed(chalk.green('Project created successfully!'));
+    s.stop("Project scaffolded ✅");
 
-    // Install dependencies
-    if (opts.skipInstall) {
-      console.log(chalk.yellow('\nSkipping dependency installation (--skip-install).'));
-    } else {
-      console.log();
-      const installSpinner = ora(`Installing dependencies with ${packageManager}...`).start();
+    const shouldInstall = await confirm({
+      message: `Install dependencies with ${packageManager}?`,
+    });
 
+    if (shouldInstall) {
+      const installSpinner = spinner();
+      installSpinner.start(`Installing with ${packageManager}...`);
       try {
-        const installCmd = packageManager === 'yarn' ? 'yarn install' : `${packageManager} install`;
-        execSync(installCmd, {
-          cwd: targetDir,
-          stdio: 'pipe'
-        });
-        installSpinner.succeed(chalk.green('Dependencies installed!'));
+        const installCmd = packageManager === "yarn" ? "yarn install" : `${packageManager} install`;
+        execSync(installCmd, { cwd: targetDir, stdio: "pipe" });
+        installSpinner.stop("Dependencies installed ✅");
       } catch (error) {
-        installSpinner.fail(chalk.red('Failed to install dependencies'));
+        installSpinner.fail(chalk.red("Failed to install dependencies"));
         console.log(chalk.yellow(`\nPlease run "${packageManager} install" manually.\n`));
       }
     }
 
-    // Initialize Git repository
-    if (opts.skipGit) {
-      console.log(chalk.yellow('\nSkipping git initialization (--skip-git).'));
-    } else {
-      console.log();
-      const gitSpinner = ora('Initializing Git repository...').start();
-
-      try {
-        // Check if git is available
-        execSync('git --version', { stdio: 'pipe' });
-
-        // Initialize git repo if not already initialized
-        if (!fs.existsSync(path.join(targetDir, '.git'))) {
-          execSync('git init', { cwd: targetDir, stdio: 'pipe' });
-          execSync('git add .', { cwd: targetDir, stdio: 'pipe' });
-          execSync('git commit -m "Initial commit from create-agentic-app"', {
-            cwd: targetDir,
-            stdio: 'pipe'
-          });
-          gitSpinner.succeed(chalk.green('Git repository initialized!'));
-        } else {
-          gitSpinner.info(chalk.blue('Git repository already exists'));
-        }
-      } catch (error) {
-        gitSpinner.warn(chalk.yellow('Git not found - skipping repository initialization'));
-      }
-    }
-
-    // Display next steps
     console.log();
-    console.log(chalk.bold.green('✨ Your agentic app is ready!\n'));
-    console.log(chalk.bold('Next steps:\n'));
+    console.log(chalk.bold.green(`✅ Your ${framework === "nextjs" ? "Next.js" : "Astro"} agentic app is ready!\n`));
+    console.log(chalk.bold("Next steps:\n"));
 
-    if (projectDir !== '.') {
+    if (projectDir !== ".") {
       console.log(chalk.cyan(`  cd ${projectDir}`));
     }
 
-    console.log(chalk.cyan('  1. Update the .env file with your API keys and database credentials'));
+    console.log(chalk.cyan("  1. Update the .env file with your API keys and database credentials"));
     console.log(chalk.cyan(`  2. Start the database: docker compose up -d`));
     console.log(chalk.cyan(`  3. Run database migrations: ${packageManager} run db:migrate`));
     console.log(chalk.cyan(`  4. Start the development server: ${packageManager} run dev`));
 
     console.log();
-    console.log(chalk.gray('For more information, check out the README.md file.\n'));
+    console.log(chalk.gray("  🤖 AI agent commands are in .claude/commands/"));
+    console.log(chalk.gray("  📐 Coding rules are in .cursor/rules/"));
+    console.log(chalk.gray("  🧠 Core agent layer is in .core/"));
+
+    console.log();
 
   } catch (error) {
-    spinner.fail(chalk.red('Failed to create project'));
+    s.fail(chalk.red("Failed to create project"));
     console.error(error);
     process.exit(1);
   }
