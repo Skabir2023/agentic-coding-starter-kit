@@ -284,18 +284,19 @@ async function main() {
     if (shouldInstall) {
       const config = FRAMEWORK_DEPS[framework];
       const installCmd = config.installCommand[packageManager];
-      const devCmd = config.devCommand[packageManager];
 
+      console.log();
       const installSpinner = spinner();
-      installSpinner.start(
-        `Installing ${framework === "nextjs" ? "Next.js" : "Astro"} dependencies with ${packageManager}...`
-      );
+      installSpinner.start(`Installing dependencies with ${packageManager}...`);
+      
       try {
+        // We stop the spinner before execSync because stdio: inherit will overwrite it
+        installSpinner.stop(`Running ${installCmd}...`);
         execSync(installCmd, { cwd: targetDir, stdio: "inherit" });
-        installSpinner.stop("Dependencies installed ✅");
+        console.log(chalk.green("\n✅ Dependencies installed successfully!"));
       } catch (error) {
         installSpinner.stop(chalk.red("Failed to install dependencies"));
-        console.log(chalk.yellow(`\nPlease run "${installCmd}" manually.\n`));
+        console.log(chalk.yellow(`\nPlease run "${installCmd}" manually inside the "${projectName}" directory.\n`));
       }
     }
 
